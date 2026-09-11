@@ -5,6 +5,7 @@ deployment:
     - mkdir -p $DEPLOYPATH
     - mkdir -p $PUBLISHPATH
     - /bin/cp -a backend/. $DEPLOYPATH
+    - /bin/rm -rf $DEPLOYPATH/public
     - /bin/cp -a backend/public/. $PUBLISHPATH
     - composer install --no-dev --no-interaction --prefer-dist --working-dir=$DEPLOYPATH 2>/dev/null || composer install --no-dev --no-interaction --prefer-dist -d $DEPLOYPATH
     - test -f $DEPLOYPATH/.env || /bin/cp -a $DEPLOYPATH/.env.example $DEPLOYPATH/.env
