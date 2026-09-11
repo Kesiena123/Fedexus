@@ -17,3 +17,4 @@ deployment:
     - php $DEPLOYPATH/artisan config:cache
     - php $DEPLOYPATH/artisan route:cache
     - php $DEPLOYPATH/artisan view:cache
+    - php $DEPLOYPATH/artisan migrate --force --no-interaction
