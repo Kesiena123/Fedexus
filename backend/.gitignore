@@ -32,4 +32,4 @@ add_avast_cert.php
 /.phpunit.result.cache
 /vendor-cache/
 /bootstrap/cache/*.php
-/database/*.sql
+/database/*.sql/vendor/stripe/stripe-php/README.md
