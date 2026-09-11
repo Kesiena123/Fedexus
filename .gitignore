@@ -1,0 +1,36 @@
+# Sensitive / local
+.env
+.env.*
+!.env.example
+cookies.txt
+*_cookies.txt
+response_headers.txt
+response.html
+response2.html
+root-cert.pem
+admin_cookies.txt
+
+# Tooling caches
+.npm-cache/
+node_modules/
+vendor/
+.agents/
+.vscode/
+.idea/
+
+# Logs & temp
+*.log
+*.err.log
+tmp_*.php
+_check.php
+check_*.php
+
+# User uploads / test data (never commit)
+/backend/storage/app/private/
+/backend/storage/app/public/
+/backend/storage/app/*.pdf
+/backend/storage/framework/local-router.php
+
+# OS
+.DS_Store
+Thumbs.db

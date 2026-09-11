@@ -1,0 +1,436 @@
+You are a senior Laravel architect and configuration/security engineer.
+
+I have an existing Laravel logistics/consignment application. The application currently does NOT properly use the Laravel .env variables. Some configuration values appear to be hardcoded in PHP, config files, JavaScript, Blade templates, or other parts of the application.
+
+I want you to FIX THIS PROPERLY without breaking any existing functionality.
+
+==================================================
+PRIMARY OBJECTIVE
+==================================================
+
+Audit the entire application and identify every configuration value that should come from the .env file but is currently hardcoded or incorrectly configured.
+
+Then safely migrate those values to Laravel's environment/configuration system.
+
+DO NOT blindly replace values.
+
+DO NOT rewrite the application.
+
+DO NOT remove working functionality.
+
+DO NOT change business logic unless required for the configuration migration.
+
+==================================================
+INSPECT FIRST
+==================================================
+
+Before modifying anything, inspect:
+
+• .env
+• .env.example
+• config/*.php
+• Controllers
+• Models
+• Services
+• Middleware
+• Routes
+• Blade files
+• JavaScript
+• Payment integrations
+• Email configuration
+• Storage configuration
+• Map configuration
+• Application URLs
+• API integrations
+• Chat configuration
+• Database configuration
+• Authentication configuration
+• File upload configuration
+
+Search the entire codebase for:
+
+• Hardcoded API keys
+• Hardcoded secrets
+• Hardcoded passwords
+• Hardcoded database credentials
+• Hardcoded URLs
+• Hardcoded application name
+• Hardcoded application URL
+• Hardcoded email addresses
+• Hardcoded SMTP settings
+• Hardcoded payment credentials
+• Hardcoded Flutterwave credentials
+• Hardcoded map/API keys
+• Hardcoded storage paths
+• Hardcoded environment-specific values
+• Hardcoded company settings that belong in configuration
+
+==================================================
+USE LARAVEL CONFIGURATION CORRECTLY
+==================================================
+
+Follow Laravel best practices.
+
+Environment variables should be accessed through configuration files.
+
+Preferred architecture:
+
+.env
+↓
+config/*.php
+↓
+Application Code
+
+Do NOT scatter env() calls throughout controllers, models, services, or Blade files.
+
+For example:
+
+.env
+
+APP_NAME="Global Express Logistics"
+APP_URL=https://example.com
+
+config/app.php
+
+'name' => env('APP_NAME', 'Laravel'),
+'url' => env('APP_URL', 'http://localhost'),
+
+Application code should use:
+
+config('app.name')
+config('app.url')
+
+instead of directly calling:
+
+env('APP_NAME')
+env('APP_URL')
+
+==================================================
+PAYMENT CONFIGURATION
+==================================================
+
+Review all payment integrations.
+
+Move sensitive credentials into .env.
+
+For example:
+
+FLW_PUBLIC_KEY=
+FLW_SECRET_KEY=
+FLW_ENCRYPTION_KEY=
+
+STRIPE_KEY=
+STRIPE_SECRET=
+
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+
+CRYPTO_API_KEY=
+CRYPTO_API_SECRET=
+
+Never expose secret keys to Blade, JavaScript, HTML, or client-side code.
+
+Only public/client keys that genuinely need to reach the browser may be exposed.
+
+==================================================
+EMAIL CONFIGURATION
+==================================================
+
+Move SMTP configuration to .env.
+
+Support:
+
+MAIL_MAILER=
+MAIL_HOST=
+MAIL_PORT=
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=
+MAIL_FROM_ADDRESS=
+MAIL_FROM_NAME=
+
+Do not hardcode SMTP credentials anywhere in the application.
+
+==================================================
+DATABASE CONFIGURATION
+==================================================
+
+Ensure Laravel uses:
+
+DB_CONNECTION=
+DB_HOST=
+DB_PORT=
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+
+Do not hardcode database credentials.
+
+The application must support both local XAMPP MySQL and production hosting by changing only .env values.
+
+==================================================
+APPLICATION SETTINGS
+==================================================
+
+Separate ENVIRONMENT configuration from ADMIN-MANAGED WEBSITE SETTINGS.
+
+Important:
+
+Do NOT move every Admin Setting into .env.
+
+Values that need to be changed by the Admin from the dashboard should remain in the database/settings system.
+
+Examples of Admin-controlled settings:
+
+• Website Logo
+• Website Title
+• Company Name
+• Contact Information
+• Support Email
+• Live Chat Welcome Message
+• Payment Gateway Enabled/Disabled
+• Bank Account Details
+• Shipment Settings
+
+Environment variables should be used for:
+
+• Secrets
+• API credentials
+• Database credentials
+• SMTP credentials
+• Application environment
+• Application URL
+• Infrastructure configuration
+• Server-level configuration
+
+Maintain this separation correctly.
+
+==================================================
+MAP CONFIGURATION
+==================================================
+
+Review the existing map implementation.
+
+Move any required API keys or configuration values to .env/config.
+
+Do not expose private API keys.
+
+Ensure the map continues working after the change.
+
+==================================================
+STORAGE
+==================================================
+
+Review:
+
+FILESYSTEM_DISK
+
+Storage paths
+
+Upload configuration
+
+Make them configurable through Laravel configuration where appropriate.
+
+Do not break existing shipment photos, payment receipts, chat attachments, logos, or documents.
+
+==================================================
+FRONTEND
+==================================================
+
+If JavaScript requires a public configuration value, expose ONLY the required public value using Laravel's existing frontend configuration mechanism.
+
+Never expose:
+
+• Secret API keys
+• Database credentials
+• SMTP passwords
+• Payment secret keys
+• Encryption keys
+
+==================================================
+SECURITY
+==================================================
+
+Search the entire project for accidentally exposed secrets.
+
+If credentials are found hardcoded in source code:
+
+1. Replace them with environment variables.
+2. Update the relevant config file.
+3. Remove the hardcoded secret.
+4. Ensure the application still works.
+
+Do not print secret values in the final report.
+
+If a secret has previously been committed to Git, warn that the credential should be rotated.
+
+==================================================
+ENVIRONMENT FILE
+==================================================
+
+Create/update:
+
+.env.example
+
+Include all required variables with safe placeholder values.
+
+NEVER place real production secrets inside .env.example.
+
+Example:
+
+FLW_SECRET_KEY=
+STRIPE_SECRET=
+MAIL_PASSWORD=
+
+==================================================
+CONFIG CACHE COMPATIBILITY
+==================================================
+
+Ensure the application works correctly when Laravel configuration is cached.
+
+Test:
+
+php artisan config:clear
+
+php artisan config:cache
+
+The application must not depend on calling env() directly outside configuration files.
+
+==================================================
+LOCAL + PRODUCTION COMPATIBILITY
+==================================================
+
+The same codebase must work in:
+
+• Local XAMPP
+• Local development
+• InfinityFree/shared hosting
+• Production hosting
+
+Only environment/configuration values should need to change between environments.
+
+Do not create environment-specific hardcoded code.
+
+==================================================
+DO NOT BREAK EXISTING FEATURES
+==================================================
+
+Preserve all existing functionality, including:
+
+• Admin Login
+• Admin Dashboard
+• Shipment Creation
+• Shipment Editing
+• Tracking Number Generation
+• Guest Tracking
+• Shipment History
+• Live Tracking Map
+• Payment Requests
+• Flutterwave
+• Bank Transfer
+• Pay on Delivery
+• Cryptocurrency Payment
+• Payment Receipts
+• Barcode
+• QR Code
+• Live Chat
+• Email Notifications
+• Website Settings
+• Reports
+• File Uploads
+• Admin Controls
+
+==================================================
+SAFE IMPLEMENTATION PROCESS
+==================================================
+
+Follow this order:
+
+1. Audit the entire codebase.
+2. Identify hardcoded configuration.
+3. Categorize each value.
+4. Determine whether it belongs in .env, config, or database/Admin Settings.
+5. Create/update configuration files.
+6. Update application code to use config().
+7. Update .env.example.
+8. Remove unnecessary hardcoded configuration.
+9. Clear configuration cache.
+10. Test the application.
+11. Fix any configuration-related errors.
+12. Verify all existing features.
+
+Do NOT make destructive changes.
+
+Do NOT delete migrations, models, controllers, routes, or views unless they are proven unused and unrelated to this task.
+
+==================================================
+FINAL VALIDATION
+==================================================
+
+Verify:
+
+✓ Database connection works.
+
+✓ Admin login works.
+
+✓ Shipment creation works.
+
+✓ Shipment editing works.
+
+✓ Tracking works.
+
+✓ Payment requests work.
+
+✓ Flutterwave configuration works.
+
+✓ Bank Transfer works.
+
+✓ Pay on Delivery works.
+
+✓ Email configuration works.
+
+✓ Live chat works.
+
+✓ Map works.
+
+✓ File uploads work.
+
+✓ Website settings work.
+
+✓ Admin settings work.
+
+✓ Configuration cache works.
+
+✓ No secret credentials are exposed in frontend code.
+
+✓ No unnecessary env() calls exist outside config files.
+
+✓ .env.example contains all required variables.
+
+✓ Existing functionality remains unchanged.
+
+==================================================
+FINAL REPORT
+==================================================
+
+After completing the work, provide a concise report containing:
+
+1. Configuration values moved to .env.
+2. Configuration files created/updated.
+3. Hardcoded configuration removed.
+4. Security issues fixed.
+5. Any values intentionally left in the database/Admin Settings and why.
+6. Any environment variables that must be configured before deployment.
+7. Tests performed and their results.
+
+Do not expose any actual secret keys, passwords, or credentials in the report.
+
+IMPORTANT:
+
+The highest priority is PRESERVING EXISTING FUNCTIONALITY.
+
+Do not rewrite working code unnecessarily.
+
+Make the smallest safe changes required to properly implement Laravel environment-based configuration.
+
+Do not declare the task complete until the application has been tested after the changes.

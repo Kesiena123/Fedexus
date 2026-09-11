@@ -1,0 +1,460 @@
+================================================================================
+                    FedExUS — Global Logistics & Courier Platform
+                          Complete Feature Documentation
+================================================================================
+
+
+1. PUBLIC PAGES
+--------------------------------------------------------------------------------
+
+- Home (/)                    Landing page with company overview and hero section
+- About (/about)              Company information and mission statement
+- Services (/services)        Domestic shipping service offerings
+- International (/services/international)  Cross-border shipping services
+- Pricing/Rates (/pricing, /rates)          Shipping rate calculator and pricing tables
+- Contact (/contact)          Contact form with company details
+- Support (/support)          Support ticket submission (guest-friendly)
+- Careers (/careers)          Job listings and hiring information
+- Blog (/blog)                News and articles
+- FAQ (/faq)                  Frequently asked questions
+
+
+2. SHIPMENT TRACKING (PUBLIC)
+--------------------------------------------------------------------------------
+
+- Track via search form at /tracking
+- Track via direct URL at /tracking/{trackingNumber}
+- Live tracking data endpoint returning JSON (real-time map points, status, timestamps)
+- Interactive OpenStreetMap with route markers, origin, destination, transit points
+- 13 tracking statuses with 8-step visual progress timeline
+- Statuses: Created, Pending, Picked Up, In Transit, Arrived at Facility, Customs
+  Clearance, Out for Delivery, Delivered, Delayed, On Hold, Cancelled, Returned, Exception
+- Copy tracking number to clipboard
+- Print tracking page
+- Live map auto-refresh every 15 seconds
+- Responsive map with debounced resize handling
+
+
+3. RECEIPTS (PUBLIC)
+--------------------------------------------------------------------------------
+
+- HTML receipt at /receipt/{trackingNumber} with:
+  * Company header and branding
+  * Tracking number with Code 128 barcode (JsBarcode)
+  * QR code for tracking link (QRCode.js)
+  * Status strip with color-coded badge
+  * Sender and receiver details
+  * Shipment info grid (service type, method, priority, dates)
+  * Package information (type, weight, dimensions)
+  * Cost breakdown table (shipping, handling, insurance, customs, tax, discount)
+  * 8-step progress tracker
+  * Print and download actions
+
+- PDF receipt at /receipt/{trackingNumber}/pdf:
+  * A4 portrait format via DomPDF
+  * Code 128 barcode rendered as HTML table cells
+  * Equal 35px margins
+  * All inline styles for DomPDF compatibility
+  * Downloadable file
+
+
+4. PAYMENT PORTAL (PUBLIC)
+--------------------------------------------------------------------------------
+
+- Secure token-based payment page at /pay/{token}
+- Displays shipment details, amount, reason, and due date
+- Multi-gateway support:
+  * Stripe
+  * PayPal
+  * Flutterwave
+  * Paystack
+  * Bank Transfer
+- 5-stage payment schedule (20% each):
+  1. Booking Deposit
+  2. Pickup Confirmation
+  3. International Processing
+  4. Destination Hub Processing
+  5. Final Delivery Release
+- Transaction tracking per payment request
+- Full audit trail for all payment actions
+
+
+5. CURRENCIES SUPPORTED
+--------------------------------------------------------------------------------
+
+- USD (US Dollar)
+- EUR (Euro)
+- GBP (British Pound)
+- CAD (Canadian Dollar)
+- NGN (Nigerian Naira)
+- AED (UAE Dirham)
+- INR (Indian Rupee)
+- JPY (Japanese Yen)
+
+
+6. SHIPPING QUOTE API
+--------------------------------------------------------------------------------
+
+- POST /api/quotes
+- Calculate shipping cost based on:
+  * Origin and destination countries
+  * Package weight (per-kg rate)
+  * Declared value (1.2% surcharge)
+  * Service level multiplier
+
+
+7. GUEST LIVE CHAT
+--------------------------------------------------------------------------------
+
+- POST /api/guest-chat — Start conversation with tracking number, name, email, message
+- GET /api/guest-chat/{token} — Poll full conversation history
+- POST /api/guest-chat/{token}/messages — Reply to conversation
+- Real-time messaging via Laravel Broadcasting
+
+
+8. SERVICE LEVELS
+--------------------------------------------------------------------------------
+
+- Domestic Express       $48 base    2-day delivery
+- International Priority $85 base    3-day delivery
+- Freight                $220 base   6-day delivery
+- Overnight              $48 base    1-day delivery
+- Standard               $32 base    4-day delivery
+- Express                $48 base    2-day delivery
+
+
+9. SUPPORTED COUNTRIES (20)
+--------------------------------------------------------------------------------
+
+Across 6 continents with warehouse routing:
+- MEM (Memphis), LHR (London), DXB (Dubai), LOS (Lagos), GRU (Sao Paulo)
+
+
+10. SHIPMENT TEMPLATES (6)
+--------------------------------------------------------------------------------
+
+- Standard International — Cross-border commercial freight
+- Express Domestic       — Fast domestic parcels
+- Freight                — Heavy/palletized cargo
+- Medical                — Temperature-controlled medical supplies
+- Fragile                — Extra-care delicate goods
+- Electronics            — High-value electronics with traceability
+
+Each template includes: category, package type, service level, insurance tier,
+package dimensions, payment configuration, and contextual notes.
+
+
+================================================================================
+                         ADMIN / BACKEND FEATURES
+================================================================================
+
+
+11. ADMIN AUTHENTICATION & SECURITY
+--------------------------------------------------------------------------------
+
+- Admin Login (GET|POST /admin/login) with:
+  * Arithmetic CAPTCHA (server-side hashed, cache-backed)
+  * Rate limiting (5 attempts per 900 seconds per email + IP)
+  * Suspended account detection
+  * Two-Factor Authentication (6-digit code via notification + email)
+  * Trusted device recognition (device fingerprint, 30-day window)
+  * Session invalidation on logout
+
+- API-based Admin Login (POST /api/admin/auth/login) with:
+  * IP allowlist/blocklist enforcement
+  * Sanctum token with configurable session timeout (default 30 min)
+  * Device name and fingerprint tracking
+
+- Two-Factor Authentication:
+  * Enable with 6-digit confirmation code
+  * Disable with password re-entry
+  * 10-minute code expiry
+
+- Role-Based Access Control (RBAC):
+  * 7 roles: super_admin, admin, manager, support, warehouse, driver, customer
+  * 11 fine-grained permissions:
+    - dashboard.view, users.view, users.manage
+    - shipments.view, shipments.create, shipments.approve, shipments.update,
+      shipments.delete, shipments.attachments.manage
+    - payments.manage, audit.view
+  * Per-user permission overrides (grant/revoke on top of role defaults)
+
+- Security Protections:
+  * Self-modification protection (admins cannot modify own account from control)
+  * Super admin protection (only super admins can modify other super admins)
+  * High-risk access protection (only super admins can modify users with users.manage)
+  * IP allowlist/blocklist via environment variables
+  * Admin session timeout (configurable, default 30 minutes)
+
+
+12. ADMIN DASHBOARD
+--------------------------------------------------------------------------------
+
+- Key metrics overview:
+  * Total shipments, pending, in-transit, delivered, cancelled
+  * Revenue, customer count, admin count
+  * Pending payment amount, open support tickets
+- Approval queue (shipments awaiting tracking number generation)
+- Tracked shipments list with events and payments
+- Payment verification queue
+- 6-month charts (shipments + revenue)
+- Top 5 shipping routes
+- Recent activity feed (audit logs)
+
+
+13. SHIPMENT MANAGEMENT
+--------------------------------------------------------------------------------
+
+- Shipment List (/admin/shipments):
+  * Paginated with search (tracking number, sender, recipient)
+  * Filter by status, destination, date range
+  * Approval queue display
+
+- Create Shipment (/admin/shipments/create):
+  * Sender details (name, company, phone, email, address, postal code, country, state, city)
+  * Recipient details (same fields)
+  * Service level, shipment type, shipping method, priority
+  * Package details (type, weight, dimensions, quantity, description)
+  * Cost breakdown (shipping cost, handling fee, insurance, customs, tax, discount, additional charges)
+  * Warehouse and driver assignment
+  * Photo upload (up to 10 images, max 5MB each, jpg/jpeg/png/webp)
+  * Auto-generated random sample data for testing
+  * Automatic tracking number generation (formats: GEX, FDX, TRK, LOG)
+  * Route point creation with geocoded coordinates
+  * 5-stage payment schedule auto-creation
+
+- Show Shipment (/admin/shipments/{id}):
+  * Full shipment details
+  * Interactive Leaflet map with route points and tracking events
+  * Add tracking event form (status, location, description, coordinates, timestamp)
+  * Automatic route point creation from tracking updates
+  * Shipment photos with lightbox viewer
+  * PDF receipt download button
+
+- Edit Shipment (/admin/shipments/{id}/edit):
+  * Full edit form for all shipment fields
+
+- Delete Shipment (DELETE /admin/shipments/{id}):
+  * Hard delete with audit logging
+
+- Export Shipments (/admin/shipments/export):
+  * CSV download with all shipment fields
+
+
+14. SHIPMENT WORKFLOW
+--------------------------------------------------------------------------------
+
+- Approve shipment: Generate tracking number, set status, create 5 payment stages
+- Reject shipment: Set status with reason
+- Regenerate tracking number: Replace existing with new one
+- Update shipment status: Change with location, description, timestamp
+- Add tracking event: Granular events with geocoded locations
+- Schedule pickup/delivery: Time window, address, instructions
+
+
+15. PAYMENT MANAGEMENT
+--------------------------------------------------------------------------------
+
+- Payments Page (/admin/payments):
+  * List all payments with status, provider, reference
+  * Search by reference or tracking number
+  * Filter by status and method
+  * Update payment status (pending/verified/rejected/failed/refunded/paid)
+  * Create payment requests for specific shipments
+  * Delete payment requests
+  * Verify, reject, and unlock payment stages
+
+
+16. USER MANAGEMENT
+--------------------------------------------------------------------------------
+
+- List users: Paginated, searchable (name/email/company), filterable by role/status
+- Create user: Full account creation with role, temporary password, permission overrides
+- View user: Full profile with shipment history, payment history, activity logs
+- Update user: Edit name, email, phone, company, role, admin permissions
+- Suspend user: Revoke all tokens, record reason
+- Reactivate user: Restore access
+- Verify email: Force email verification
+- Issue password reset: Generate time-limited reset token
+- Delete user: Hard delete with audit logging
+
+
+17. STAFF, DRIVER, WAREHOUSE MANAGEMENT
+--------------------------------------------------------------------------------
+
+- Staff page (/admin/staff) — Operations staff management
+- Drivers page (/admin/drivers) — Driver account management
+- Warehouse page (/admin/warehouse) — Warehouse management
+- Administrators page (/admin/administrators) — Admin user management
+
+
+18. SUPPORT TICKET MANAGEMENT
+--------------------------------------------------------------------------------
+
+- Support page (/admin/support):
+  * Open/pending/resolved/closed counts
+  * Status update (open/pending/resolved/closed)
+  * Paginated ticket list
+
+
+19. LIVE CHAT MANAGEMENT
+--------------------------------------------------------------------------------
+
+- Live chat page (/admin/live-chat):
+  * Reply to guest conversations
+  * Close/reopen conversations
+  * Conversation history with shipment context
+  * Admin audit logging for all chat actions
+
+
+20. EMAIL SERVICES
+--------------------------------------------------------------------------------
+
+- Email services page (/admin/email-services):
+  * Send emails to specific users (by user ID)
+  * Send to arbitrary email addresses
+  * File attachments support
+  * Full email log with delivery status
+
+
+21. NOTIFICATION SYSTEM
+--------------------------------------------------------------------------------
+
+- Multi-channel dispatch: in-app, email, SMS
+- In-app notification inbox with read/unread tracking
+- Notification triggers:
+  * Shipment created
+  * Tracking number generated
+  * Payment request created
+  * Payment received
+  * Status updated
+  * Shipment delivered
+- Resend notifications to shipment customers
+- Per-user notification preferences
+
+
+22. CMS, REPORTS, SECURITY
+--------------------------------------------------------------------------------
+
+- CMS page (/admin/cms) — Content management system
+- Reports page (/admin/reports) — Analytics and reporting dashboard
+- Security page (/admin/security) — Security overview
+
+
+23. APPLICATION SETTINGS
+--------------------------------------------------------------------------------
+
+- App Settings (/admin/settings/app):
+  * Company name, email, phone, address
+  * Logo, favicon, website URL
+  * Currency, timezone, date format
+  * Default shipment status
+
+- Payment Settings (/admin/settings/payment):
+  * Gateway configuration (name, API keys, secret/public keys)
+  * Mode (test/live), currency, active toggle
+
+- Email Settings (/admin/settings/email):
+  * SMTP configuration (host, port, username, password, encryption)
+  * Sender name and address
+  * Notification toggles for shipment events
+
+- Live Chat Settings (/admin/settings/live-chat):
+  * Enable/disable chat
+  * Welcome message
+  * Guest email requirement
+  * Polling interval
+
+- Map Settings (/admin/settings/map):
+  * Map provider
+  * Public API key
+  * Default latitude and longitude
+  * Default zoom level
+
+- Notification Settings (/admin/settings/notifications):
+  * Global enable/disable
+  * Admin alerts
+  * Guest tracking alerts
+  * Footer text
+
+- Account Settings (/admin/settings/account):
+  * Profile update (name, email)
+  * Password change with current password verification
+
+
+24. AUDIT LOGGING
+--------------------------------------------------------------------------------
+
+- Every admin action logged with:
+  * Admin user
+  * Action performed
+  * Target type and ID
+  * Previous values
+  * New values
+  * IP address
+  * Device name
+  * Device fingerprint
+  * Reason (if provided)
+  * Timestamp
+- Audit logs page (/admin/audit-logs)
+- Export audit logs as CSV (/admin/audit-logs/export)
+
+
+25. ADDITIONAL OPERATIONAL FEATURES
+--------------------------------------------------------------------------------
+
+- Geocoding service: OpenStreetMap Nominatim with local coordinate cache
+- Shipment drafts: Multi-step wizard auto-saves progress (30-day expiry)
+- Warehouse assignment: Shipments assigned to warehouses (MEM, LHR, DXB, LOS, GRU)
+- Driver assignment: Shipments assigned to drivers
+- CSV export: Shipment data and audit logs
+- Barcode generation: Code 128 rendered as HTML table for PDF receipts
+- Staff/Driver/Warehouse portals for role-specific views
+
+
+================================================================================
+                         TECHNICAL ARCHITECTURE
+================================================================================
+
+- Framework:        Laravel (PHP) with Blade templating
+- API:              Dual architecture — Blade server-rendered pages + RESTful JSON API
+- Authentication:   Session-based (Blade) + Sanctum tokens (API)
+- Real-time:        Broadcasting events (ShipmentUpdated, MessageSent)
+- PDF Generation:   DomPDF with HTML5 parser
+- Barcode:          Picqer barcode library (Code 128 SVG)
+- Geocoding:        OpenStreetMap Nominatim with local cache
+- Frontend:         Tailwind CSS, Alpine.js, Vite bundler
+- Maps:             Leaflet.js with OpenStreetMap tiles
+- Database:         23 models, 14 migrations
+
+
+================================================================================
+                          DATA MODELS (23)
+================================================================================
+
+User                    All user accounts (customers, admins, drivers, etc.)
+Shipment                 Core shipment record
+TrackingEvent            Individual tracking updates per shipment
+ShipmentRoutePoint       Map route points (origin, destination, checkpoints)
+ShipmentSchedule         Pickup/delivery scheduling
+ShipmentAttachment       File attachments for shipments
+ShipmentDraft            Auto-saved shipment creation drafts
+Payment                  Staged payment records per shipment
+PaymentRequest           Standalone payment request links
+PaymentTransaction       Individual payment transactions
+PaymentSetting           Gateway configuration
+SupportTicket            Customer support tickets
+InAppNotification        In-app notification inbox
+NotificationPreference   Per-user notification settings
+EmailLog                 Outbound email audit log
+GuestChatConversation    Guest chat sessions
+GuestChatMessage         Guest chat messages
+Conversation             Authenticated user-to-user chats
+Message                  Authenticated chat messages
+AdminAuditLog            Admin action audit trail
+AdminSetting             System configuration key-value store
+Address                  Saved addresses for users
+Warehouse                Warehouse locations
+
+
+================================================================================
