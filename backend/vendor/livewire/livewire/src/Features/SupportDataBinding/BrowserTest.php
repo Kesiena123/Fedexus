@@ -1,0 +1,279 @@
+<?php
+
+namespace Livewire\Features\SupportDataBinding;
+
+use Tests\BrowserTestCase;
+use Livewire\Livewire;
+use Livewire\Component;
+use Livewire\Attributes\Computed;
+
+class BrowserTest extends BrowserTestCase
+{
+    function test_can_use_wire_dirty()
+    {
+        Livewire::visit(new class extends Component {
+            public $prop = false;
+
+            public function render()
+            {
+                return <<<'BLADE'
+                    <div>
+                        <input dusk="checkbox" type="checkbox" wire:model="prop" value="true"  />
+
+                        <div wire:dirty>Unsaved changes...</div>
+                        <div wire:dirty.remove>The data is in-sync...</div>
+                    </div>
+                BLADE;
+            }
+        })
+            ->assertSee('The data is in-sync...')
+            ->check('@checkbox')
+            ->assertDontSee('The data is in-sync')
+            ->assertSee('Unsaved changes...')
+            ->uncheck('@checkbox')
+            ->assertSee('The data is in-sync...')
+            ->assertDontSee('Unsaved changes...')
+        ;
+    }
+
+    function test_can_update_bound_value_from_lifecyle_hook()
+    {
+        Livewire::visit(new class extends Component {
+            public $foo = null;
+
+            public $bar = null;
+
+            public function updatedFoo(): void
+            {
+                $this->bar = null;
+            }
+
+            public function render()
+            {
+                return <<<'BLADE'
+                    <div>
+                        <select wire:model.live="foo" dusk="fooSelect">
+                            <option value=""></option>
+                            <option value="one">One</option>
+                            <option value="two">Two</option>
+                            <option value="three">Three</option>
+                        </select>
+
+                        <select wire:model="bar" dusk="barSelect">
+                            <option value=""></option>
+                            <option value="one">One</option>
+                            <option value="two">Two</option>
+                            <option value="three">Three</option>
+                        </select>
+                    </div>
+                BLADE;
+            }
+        })
+            ->select('@barSelect', 'one')
+            ->waitForLivewire()->select('@fooSelect', 'one')
+            ->assertSelected('@barSelect', '')
+        ;
+    }
+
+    public function updates_dependent_select_options_correctly_when_wire_key_is_applied()
+    {
+        Livewire::visit(new class extends Component {
+            public $parent = 'foo';
+
+            public $child = 'bar';
+
+            protected $options = [
+                'foo' => [
+                    'bar',
+                ],
+                'baz' => [
+                    'qux',
+                ],
+            ];
+
+            #[Computed]
+            public function parentOptions(): array
+            {
+                return array_keys($this->options);
+            }
+
+            #[Computed]
+            public function childOptions(): array
+            {
+                return $this->options[$this->parent];
+            }
+
+            public function render(): string
+            {
+                return <<<'blade'
+                    <div>
+                        <select wire:model.live="parent" dusk="parent">
+                            @foreach($this->parentOptions as $value)
+                                <option value="{{ $value }}">{{ $value }}</option>
+                            @endforeach
+                        </select>
+
+                        <select wire:model="child" dusk="child" wire:key="{{ $parent }}">
+                            <option value>Select</option>
+                            @foreach($this->childOptions as $value)
+                                <option value="{{ $value }}">{{ $value }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                blade;
+            }
+        })
+            ->waitForLivewire()->select('@parent', 'baz')
+            ->assertSelected('@child', '')
+            ->waitForLivewire()->select('@parent', 'foo')
+            ->assertSelected('@child', 'bar');
+    }
+
+    function test_wire_data_reflects_key_order_changes()
+    {
+        Livewire::visit(new class extends Component {
+            public $items = [
+                'a' => 1,
+                'b' => 2,
+            ];
+
+            public function reorder()
+            {
+                $this->items = [
+                    'b' => 2,
+                    'a' => 1,
+                ];
+            }
+
+            public function render()
+            {
+                return <<<'BLADE'
+                    <div>
+                        <button wire:click="reorder" dusk="reorder">Reorder</button>
+
+                        <span dusk="output" x-text="Object.keys($wire.items).join(',')"></span>
+                    </div>
+                BLADE;
+            }
+        })
+            ->assertSeeIn('@output', 'a,b')
+            ->waitForLivewire()->click('@reorder')
+            ->assertSeeIn('@output', 'b,a')
+        ;
+    }
+
+    function test_wire_data_reflects_nested_key_order_changes()
+    {
+        Livewire::visit(new class extends Component {
+            public $data = [
+                'items' => [
+                    'a' => 1,
+                    'b' => 2,
+                ],
+            ];
+
+            public function reorder()
+            {
+                $this->data = [
+                    'items' => [
+                        'b' => 2,
+                        'a' => 1,
+                    ],
+                ];
+            }
+
+            public function render()
+            {
+                return <<<'BLADE'
+                    <div>
+                        <button wire:click="reorder" dusk="reorder">Reorder</button>
+                        <span dusk="output" x-text="Object.keys($wire.data.items).join(',')"></span>
+                    </div>
+                BLADE;
+            }
+        })
+            ->assertSeeIn('@output', 'a,b')
+            ->waitForLivewire()->click('@reorder')
+            ->assertSeeIn('@output', 'b,a')
+        ;
+    }
+
+    function test_wire_data_reflects_key_order_and_value_changes()
+    {
+        Livewire::visit(new class extends Component {
+            public $items = [
+                'a' => 1,
+                'b' => 2,
+            ];
+
+            public function reorder()
+            {
+                $this->items = [
+                    'b' => 3,
+                    'a' => 1,
+                ];
+            }
+
+            public function render()
+            {
+                return <<<'BLADE'
+                    <div>
+                        <button wire:click="reorder" dusk="reorder">Reorder</button>
+                        <span dusk="keys" x-text="Object.keys($wire.items).join(',')"></span>
+                        <span dusk="values" x-text="Object.values($wire.items).join(',')"></span>
+                    </div>
+                BLADE;
+            }
+        })
+            ->assertSeeIn('@keys', 'a,b')
+            ->assertSeeIn('@values', '1,2')
+            ->waitForLivewire()->click('@reorder')
+            ->assertSeeIn('@keys', 'b,a')
+            ->assertSeeIn('@values', '3,1')
+        ;
+    }
+
+    public function test_x_mask_does_not_recreate_deleted_array_entries()
+    {
+        Livewire::visit(new class extends Component {
+            public int $count = 2;
+            public array $items = [
+                ['phone' => ''],
+                ['phone' => ''],
+            ];
+
+            public function updatedCount(): void
+            {
+                $this->items = array_slice($this->items, 0, $this->count);
+            }
+
+            public function render()
+            {
+                return <<<'BLADE'
+                    <div>
+                        <select wire:model.live="count" dusk="count">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                        </select>
+
+                        <div dusk="item-count">{{ count($items) }}</div>
+
+                        @foreach ($items as $index => $item)
+                            <div wire:key="item-{{ $index }}">
+                                <input wire:model="items.{{ $index }}.phone" x-mask="9999999999" dusk="phone-{{ $index }}" />
+                            </div>
+                        @endforeach
+                    </div>
+                BLADE;
+            }
+        })
+            ->assertSeeIn('@item-count', '2')
+            ->type('@phone-1', '1234567890')
+            ->waitForLivewire()->select('@count', '1')
+            ->assertSeeIn('@item-count', '1')
+            ->assertMissing('@phone-1')
+            ->waitForLivewire()->select('@count', '2')
+            ->assertSeeIn('@item-count', '1')
+        ;
+    }
+}
