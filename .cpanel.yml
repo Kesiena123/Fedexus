@@ -1,6 +1,6 @@
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/fedexusc/laravel/
+    - export DEPLOYPATH=/home/fedexusc/laravel-app/
     - export PUBLISHPATH=/home/fedexusc/public_html
     - mkdir -p $DEPLOYPATH
     - mkdir -p $PUBLISHPATH
