@@ -1,0 +1,22 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/fedexusc/laravel/
+    - export PUBLISHPATH=/home/fedexusc/public_html
+    - mkdir -p $DEPLOYPATH
+    - mkdir -p $PUBLISHPATH
+    - /bin/cp -a backend/. $DEPLOYPATH
+    - /bin/cp -a backend/public/. $PUBLISHPATH
+    - composer install --no-dev --no-interaction --prefer-dist --working-dir=$DEPLOYPATH 2>/dev/null || composer install --no-dev --no-interaction --prefer-dist -d $DEPLOYPATH
+    - test -f $DEPLOYPATH/.env || /bin/cp -a $DEPLOYPATH/.env.example $DEPLOYPATH/.env
+    - grep -q "^APP_KEY=base64" $DEPLOYPATH/.env || php $DEPLOYPATH/artisan key:generate --force
+    - mkdir -p $DEPLOYPATH/storage/app/public
+    - mkdir -p $DEPLOYPATH/storage/framework/cache $DEPLOYPATH/storage/framework/views $DEPLOYPATH/storage/framework/sessions
+    - /bin/rm -rf $PUBLISHPATH/storage
+    - /bin/ln -s $DEPLOYPATH/storage/app/public $PUBLISHPATH/storage
+    - php $DEPLOYPATH/artisan storage:link
+    - php $DEPLOYPATH/artisan config:cache
+    - php $DEPLOYPATH/artisan route:cache
+    - php $DEPLOYPATH/artisan view:cache
+    - /bin/rm -rf $DEPLOYPATH/storage/framework/views/*
+    - /bin/rm -rf $DEPLOYPATH/storage/framework/cache/*
+    - /bin/rm -rf $DEPLOYPATH/storage/framework/sessions/*
